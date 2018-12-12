@@ -1213,9 +1213,9 @@ THREE.GLTFLoader = ( function () {
 
 	var INTERPOLATION = {
 		CUBICSPLINE: THREE.InterpolateSmooth, // We use custom interpolation GLTFCubicSplineInterpolation for CUBICSPLINE.
-		                                      // KeyframeTrack.optimize() can't handle glTF Cubic Spline output values layout,
-		                                      // using THREE.InterpolateSmooth for KeyframeTrack instantiation to prevent optimization.
-		                                      // See KeyframeTrack.optimize() for the detail.
+																					// KeyframeTrack.optimize() can't handle glTF Cubic Spline output values layout,
+																					// using THREE.InterpolateSmooth for KeyframeTrack instantiation to prevent optimization.
+																					// See KeyframeTrack.optimize() for the detail.
 		LINEAR: THREE.InterpolateLinear,
 		STEP: THREE.InterpolateDiscrete
 	};
@@ -1297,6 +1297,19 @@ THREE.GLTFLoader = ( function () {
 
 	/**
 	 * @param {THREE.Object3D|THREE.Material|THREE.BufferGeometry} object
+	 * @param {string} field
+	 * @param {number} index
+	 */
+	function assignIndexToUserData( object, field, index ) {
+
+		object.userData = object.userData || {};
+		object.userData.gltfIndex = object.userData.gltfIndex || {};
+		object.userData.gltfIndex[ field ] = index;
+
+	}
+
+	/**
+	 * @param {THREE.Object3D|THREE.Material|THREE.BufferGeometry} object
 	 * @param {GLTF.definition} gltfDef
 	 */
 	function assignExtrasToUserData( object, gltfDef ) {
@@ -1305,7 +1318,8 @@ THREE.GLTFLoader = ( function () {
 
 			if ( typeof gltfDef.extras === 'object' ) {
 
-				object.userData = gltfDef.extras;
+				object.userData = object.userData || {};
+				object.userData.gltfExtras = gltfDef.extras;
 
 			} else {
 
@@ -2105,6 +2119,8 @@ THREE.GLTFLoader = ( function () {
 
 			}
 
+			assignIndexToUserData( bufferAttribute, 'accessors', accessorIndex );
+
 			return bufferAttribute;
 
 		} );
@@ -2207,6 +2223,8 @@ THREE.GLTFLoader = ( function () {
 			texture.minFilter = WEBGL_FILTERS[ sampler.minFilter ] || THREE.LinearMipMapLinearFilter;
 			texture.wrapS = WEBGL_WRAPPINGS[ sampler.wrapS ] || THREE.RepeatWrapping;
 			texture.wrapT = WEBGL_WRAPPINGS[ sampler.wrapT ] || THREE.RepeatWrapping;
+
+			assignIndexToUserData( texture, 'textures', textureIndex );
 
 			return texture;
 
@@ -2404,6 +2422,8 @@ THREE.GLTFLoader = ( function () {
 			if ( material.map ) material.map.encoding = THREE.sRGBEncoding;
 			if ( material.emissiveMap ) material.emissiveMap.encoding = THREE.sRGBEncoding;
 			if ( material.specularMap ) material.specularMap.encoding = THREE.sRGBEncoding;
+
+			assignIndexToUserData( material, 'materials', materialIndex );
 
 			assignExtrasToUserData( material, materialDef );
 
@@ -2749,6 +2769,8 @@ THREE.GLTFLoader = ( function () {
 
 					if ( geometries.length > 1 ) mesh.name += '_' + i;
 
+					assignIndexToUserData( mesh, 'meshes', meshIndex );
+
 					assignExtrasToUserData( mesh, meshDef );
 
 					meshes.push( mesh );
@@ -2917,6 +2939,8 @@ THREE.GLTFLoader = ( function () {
 		}
 
 		if ( cameraDef.name !== undefined ) camera.name = cameraDef.name;
+
+		assignIndexToUserData( camera, 'cameras', cameraIndex );
 
 		assignExtrasToUserData( camera, cameraDef );
 
@@ -3107,7 +3131,11 @@ THREE.GLTFLoader = ( function () {
 
 			var name = animationDef.name !== undefined ? animationDef.name : 'animation_' + animationIndex;
 
-			return new THREE.AnimationClip( name, undefined, tracks );
+			var animationClip = new THREE.AnimationClip( name, undefined, tracks );
+
+			assignIndexToUserData( animationClip, 'animations', animationIndex );
+
+			return animationClip;
 
 		} );
 
@@ -3209,6 +3237,8 @@ THREE.GLTFLoader = ( function () {
 				node.name = THREE.PropertyBinding.sanitizeNodeName( nodeDef.name );
 
 			}
+
+			assignIndexToUserData( node, 'nodes', nodeIndex );
 
 			assignExtrasToUserData( node, nodeDef );
 
@@ -3364,6 +3394,8 @@ THREE.GLTFLoader = ( function () {
 
 			var scene = new THREE.Scene();
 			if ( sceneDef.name !== undefined ) scene.name = sceneDef.name;
+
+			assignIndexToUserData( scene, 'scenes', sceneIndex );
 
 			assignExtrasToUserData( scene, sceneDef );
 
